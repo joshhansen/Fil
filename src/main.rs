@@ -1,13 +1,14 @@
-use std::time::Instant;
-
 extern crate cv;
 extern crate rand;
 
-use cv::{Mat,Scalar};
-use cv::highgui::*;
+use std::io::{Write,stdout};
+use std::time::{Duration,Instant};
+
+use cv::Mat;
+use cv::highgui::{WindowFlags,highgui_named_window};
 use cv::videoio::{CapProp,VideoCapture};
 
-use rand::{ThreadRng,Rng};
+use rand::ThreadRng;
 use rand::distributions::{IndependentSample, Range};
 
 enum Color {
@@ -63,7 +64,9 @@ impl GreedyOneBitDecoder {
     }
 }
 
-
+fn as_f64(duration: &Duration) -> f64 {
+    duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+}
 
 fn main() {
     let cap = VideoCapture::new(1);
@@ -76,27 +79,34 @@ fn main() {
     println!("Width: {}", cap.get(CapProp::FrameWidth).unwrap());
     println!("Height: {}", cap.get(CapProp::FrameHeight).unwrap());
     println!("FPS: {}", cap.get(CapProp::Fps).unwrap());
+
     highgui_named_window("Window", WindowFlags::WindowAutosize);
 
     let mut decoder = GreedyOneBitDecoder::new();
 
-    let mut prev_time = Instant::now();
+    let start_time = Instant::now();
+    let mut prev_time = start_time;
+    let mut prev_print_time = start_time;
+
+    let mut frames: u64 = 0;
+
     while let Some(image) = cap.read() {
+        frames += 1;
+
         image.show("Window", 1).unwrap();
 
         let bits = decoder.decode(&image);
 
         let new_time = Instant::now();
-
-        let duration = new_time.duration_since(prev_time);
-
-        let elapsed = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
-        let rate = 1f64 / elapsed;
-        println!("Elapsed: {:?}", elapsed);
-        println!("{} fps", rate);
-        println!("Bits: {:?}", bits);
+        let avg_fps = frames as f64 / as_f64( &new_time.duration_since(start_time) );
+        let elapsed_since_printing = as_f64(&new_time.duration_since(prev_print_time));
 
         prev_time = new_time;
 
+        if elapsed_since_printing > 1.0 {
+            print!("\r{} fps\tbits: {:?}", avg_fps, bits);
+            stdout().flush();
+            prev_print_time = new_time;
+        }
     }
 }
