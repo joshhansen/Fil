@@ -18,13 +18,14 @@ enum Color {
 
 struct Decoder {
 
+struct GreedyOneBitDecoder {
     bits: [bool; 1],
     rng: ThreadRng
 }
 
 const SAMPLES: u64 = 1000;
 
-impl Decoder {
+impl GreedyOneBitDecoder {
     fn new() -> Self {
         Self {
             bits: [false],
@@ -77,7 +78,7 @@ fn main() {
     println!("FPS: {}", cap.get(CapProp::Fps).unwrap());
     highgui_named_window("Window", WindowFlags::WindowAutosize);
 
-    let mut decoder = Decoder::new();
+    let mut decoder = GreedyOneBitDecoder::new();
 
     let mut prev_time = Instant::now();
     while let Some(image) = cap.read() {
