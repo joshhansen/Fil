@@ -5,7 +5,7 @@ extern crate rand;
 
 use cv::{Mat,Scalar};
 use cv::highgui::*;
-use cv::videoio::VideoCapture;
+use cv::videoio::{CapProp,VideoCapture};
 
 use rand::{ThreadRng,Rng};
 use rand::distributions::{IndependentSample, Range};
@@ -68,6 +68,13 @@ fn main() {
     let cap = VideoCapture::new(1);
     assert!(cap.is_open());
 
+    cap.set(CapProp::FrameWidth, 320f64);
+    cap.set(CapProp::FrameHeight, 240f64);
+    cap.set(CapProp::Fps, 187f64);
+
+    println!("Width: {}", cap.get(CapProp::FrameWidth).unwrap());
+    println!("Height: {}", cap.get(CapProp::FrameHeight).unwrap());
+    println!("FPS: {}", cap.get(CapProp::Fps).unwrap());
     highgui_named_window("Window", WindowFlags::WindowAutosize);
 
     let mut decoder = Decoder::new();
