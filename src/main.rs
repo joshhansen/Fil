@@ -65,7 +65,7 @@ impl Decoder {
 
 
 fn main() {
-    let cap = VideoCapture::new(0);
+    let cap = VideoCapture::new(1);
     assert!(cap.is_open());
 
     highgui_named_window("Window", WindowFlags::WindowAutosize);
