@@ -82,7 +82,7 @@ fn main() {
 
     let mut prev_time = Instant::now();
     while let Some(image) = cap.read() {
-        image.show("Window", 30).unwrap();
+        image.show("Window", 1).unwrap();
 
         let bits = decoder.decode(&image);
 
