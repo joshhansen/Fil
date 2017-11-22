@@ -38,27 +38,27 @@ impl <T:Copy+Eq+Hash> MostFrequent<T> {
     }
 }
 
-pub struct DiscreteFirstDerivative {
-    prev_value: Option<f64>
-}
-impl DiscreteFirstDerivative {
-    pub fn new() -> Self {
-        Self {
-            prev_value: None
-        }
-    }
-    pub fn push(&mut self, value: f64) -> Option<f64> {
-        let deriv = if let Some(prev_value) = self.prev_value {
-            let derivative = value - prev_value;
-
-            Some(derivative)
-        } else {
-            None
-        };
-        self.prev_value = Some(value);
-        deriv
-    }
-}
+// pub struct DiscreteFirstDerivative {
+//     prev_value: Option<f64>
+// }
+// impl DiscreteFirstDerivative {
+//     pub fn new() -> Self {
+//         Self {
+//             prev_value: None
+//         }
+//     }
+//     pub fn push(&mut self, value: f64) -> Option<f64> {
+//         let deriv = if let Some(prev_value) = self.prev_value {
+//             let derivative = value - prev_value;
+//
+//             Some(derivative)
+//         } else {
+//             None
+//         };
+//         self.prev_value = Some(value);
+//         deriv
+//     }
+// }
 
 pub struct MovingAvg {
     length: usize,

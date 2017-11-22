@@ -1,7 +1,7 @@
 extern crate cv;
 extern crate rand;
 
-use std::time::{Duration,Instant};
+// use std::time::{Duration,Instant};
 
 use cv::highgui::{WindowFlags,highgui_named_window};
 use cv::videoio::{CapProp,VideoCapture};
@@ -12,7 +12,6 @@ mod decode;
 mod util;
 
 use self::decode::{Decoder,TimedColorCodedOneBitDecoder};
-use self::util::{DiscreteFirstDerivative,MovingAvg,MostFrequent};
 
 
 const FPS: u8 = 60;
@@ -44,12 +43,12 @@ fn main() {
     // // let mut prev_time = start_time;
     // let mut prev_print_time = start_time;
 
-    let mut frames: u64 = 0;
+    // let mut frames: u64 = 0;
 
     let mut byte_in_progress: Vec<bool> = Vec::new();
 
     while let Some(image) = cap.read() {
-        frames += 1;
+        // frames += 1;
 
         image.show("Window", 1).unwrap();
 
