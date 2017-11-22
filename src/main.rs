@@ -6,8 +6,6 @@ extern crate rand;
 use cv::highgui::{WindowFlags,highgui_named_window};
 use cv::videoio::{CapProp,VideoCapture};
 
-
-
 mod decode;
 mod util;
 
@@ -35,8 +33,6 @@ fn main() {
 
     highgui_named_window("Window", WindowFlags::WindowAutosize);
 
-    // let mut decoder = GreedyOneBitDecoder::new();
-    // let mut decoder = TimedOneBitDecoder::new();
     let mut decoder = TimedColorCodedOneBitDecoder::new();
 
     // let start_time = Instant::now();
