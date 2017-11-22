@@ -201,7 +201,7 @@ fn sample_color(image: &Mat, x_min: usize, x_max: usize, y_min: usize, y_max: us
 // }
 
 #[derive(Clone,Copy,Debug,Eq,Hash,PartialEq)]
-enum Desc2 {
+enum Desc {
     Clock,
     Signal,
     Both,
@@ -212,7 +212,7 @@ pub struct TimedColorCodedOneBitDecoder {
     prev_clock: bool,
     left_g_avg: MovingAvg,
     right_r_avg: MovingAvg,
-    most_freq_desc: MostFrequent<Desc2>
+    most_freq_desc: MostFrequent<Desc>
 }
 impl TimedColorCodedOneBitDecoder {
     pub fn new() -> Self {
@@ -258,15 +258,14 @@ impl Decoder for TimedColorCodedOneBitDecoder {
 
         // let r_avg = self.r_avg.push(rgb[0] as f64);
         // let g_avg = self.g_avg.push(rgb[1] as f64);
-
         let desc = if r_avg < 20f64 && g_avg < 20f64 {
-            Desc2::Neither
+            Desc::Neither
         } else if r_avg > 60f64 && g_avg > 60f64 {
-            Desc2::Both
+            Desc::Both
         } else if r_avg > g_avg {
-            Desc2::Clock
+            Desc::Clock
         } else {
-            Desc2::Signal
+            Desc::Signal
         };
 
         let desc = self.most_freq_desc.push(desc);
@@ -274,10 +273,10 @@ impl Decoder for TimedColorCodedOneBitDecoder {
         // eprintln!("{:?} {:?} {:?} {:?} {:?} {:?}", desc, rgb, top_rgb, bottom_rgb, left_rgb, right_rgb);
 
         let (signal, clock) = match desc {
-            Desc2::Signal => (true, false),
-            Desc2::Clock => (false, true),
-            Desc2::Both => (true, true),
-            Desc2::Neither => (false, false)
+            Desc::Signal => (true, false),
+            Desc::Clock => (false, true),
+            Desc::Both => (true, true),
+            Desc::Neither => (false, false)
         };
 
         let result = if clock != self.prev_clock {
