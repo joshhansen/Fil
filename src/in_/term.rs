@@ -8,94 +8,15 @@ use cv::videoio::{CapProp,VideoCapture};
 use rand;
 use rand::distributions::{IndependentSample, Range};
 
-use super::Decoder;
-use super::util::{MovingAvg,MostFrequent};
+use super::super::util::{MovingAvg,MostFrequent};
 
 const FPS: u8 = 60;
 const SAMPLES: u64 = 1000;
 
-pub trait VideoDecoder : Decoder {
+
+pub trait VideoDecoder {
     /// FIXME: When const generics happen, use a parameterized array rather than vector
-    fn decode(&mut self, image: &Mat) -> Option<&Vec<bool>>;
-
-
-}
-
-impl <T:VideoDecoder> Decoder for T {
-    fn decode<F:Fn(Option<&Vec<u8>>)>(&mut self, callback: F) {
-        let mut result: Vec<u8> = Vec::with_capacity(1);
-
-        let cap = VideoCapture::new(1);
-        assert!(cap.is_open());
-
-        cap.set(CapProp::FrameWidth, 320f64);
-        cap.set(CapProp::FrameHeight, 240f64);
-        cap.set(CapProp::Fps, FPS as f64);
-
-        eprintln!("Width: {}", cap.get(CapProp::FrameWidth).unwrap());
-        eprintln!("Height: {}", cap.get(CapProp::FrameHeight).unwrap());
-        eprintln!("FPS: {}", cap.get(CapProp::Fps).unwrap());
-
-        highgui_named_window("Window", WindowFlags::WindowAutosize);
-
-        let mut decoder = TimedColorCodedOneBitDecoder::new();
-
-        // let start_time = Instant::now();
-        // // let mut prev_time = start_time;
-        // let mut prev_print_time = start_time;
-
-        // let mut frames: u64 = 0;
-
-        let mut byte_in_progress: Vec<bool> = Vec::new();
-
-        while let Some(image) = cap.read() {
-            // frames += 1;
-
-            image.show("Window", 1).unwrap();
-
-            if let Some(bits) = VideoDecoder::decode(&mut decoder, &image) {
-                for bit in bits {
-                    byte_in_progress.push(*bit);
-
-                    if byte_in_progress.len() == 8 {
-                        byte_in_progress.reverse();
-                        let mut byte = 0u8;
-                        for idx in 0..8 {
-
-                            byte <<= 1;
-
-                            if byte_in_progress[idx] {
-                                byte |= 1;
-                            }
-
-                        }
-
-                        result[0] = byte;
-                        callback(Some(&result));
-
-                        let c = char::from(byte);
-                        eprintln!("Byte: {} {}", byte, c);
-                        print!("{}", c);
-                        stdout().flush().unwrap();
-                        byte_in_progress.clear();
-                    }
-                }
-            }
-
-            callback(None);
-            // let new_time = Instant::now();
-            // let avg_fps = frames as f64 / as_f64( &new_time.duration_since(start_time) );
-            // let elapsed_since_printing = as_f64(&new_time.duration_since(prev_print_time));
-            //
-            // // prev_time = new_time;
-            //
-            // if elapsed_since_printing > 1.0 {
-            //     // print!("\r{} fps", avg_fps);
-            //     // stdout().flush().unwrap();
-            //     prev_print_time = new_time;
-            // }
-        }
-    }
+    fn decode_video(&mut self, image: &Mat) -> Option<&Vec<bool>>;
 }
 
 fn sample_color(image: &Mat, x_min: usize, x_max: usize, y_min: usize, y_max: usize) -> [u8; 3] {
@@ -149,7 +70,7 @@ impl TimedColorCodedOneBitDecoder {
     }
 }
 impl VideoDecoder for TimedColorCodedOneBitDecoder {
-    fn decode(&mut self, image: &Mat) -> Option<&Vec<bool>> {
+    fn decode_video(&mut self, image: &Mat) -> Option<&Vec<bool>> {
         let size = image.size();
         let left_rgb = sample_color(&image, 0, 100, 0, size.height as usize);
         let right_rgb = sample_color(&image, (size.width - 100) as usize, size.width as usize, 0, size.height as usize);
@@ -227,7 +148,82 @@ fn connected_components(image: &Mat) {
 }
 
 impl VideoDecoder for GridDecoder {
-    fn decode(&mut self, image: &Mat) -> Option<&Vec<bool>> {
+    fn decode_video(&mut self, image: &Mat) -> Option<&Vec<bool>> {
         None
+    }
+}
+
+pub fn decode<F:Fn(Option<&Vec<u8>>)>(callback: F) {
+    let mut result: Vec<u8> = Vec::with_capacity(1);
+
+    let cap = VideoCapture::new(1);
+    assert!(cap.is_open());
+
+    cap.set(CapProp::FrameWidth, 320f64);
+    cap.set(CapProp::FrameHeight, 240f64);
+    cap.set(CapProp::Fps, FPS as f64);
+
+    eprintln!("Width: {}", cap.get(CapProp::FrameWidth).unwrap());
+    eprintln!("Height: {}", cap.get(CapProp::FrameHeight).unwrap());
+    eprintln!("FPS: {}", cap.get(CapProp::Fps).unwrap());
+
+    highgui_named_window("Window", WindowFlags::WindowAutosize);
+
+    let mut decoder = TimedColorCodedOneBitDecoder::new();
+
+    // let start_time = Instant::now();
+    // // let mut prev_time = start_time;
+    // let mut prev_print_time = start_time;
+
+    // let mut frames: u64 = 0;
+
+    let mut byte_in_progress: Vec<bool> = Vec::new();
+
+    while let Some(image) = cap.read() {
+        // frames += 1;
+
+        image.show("Window", 1).unwrap();
+
+        if let Some(bits) = decoder.decode_video(&image) {
+            for bit in bits {
+                byte_in_progress.push(*bit);
+
+                if byte_in_progress.len() == 8 {
+                    byte_in_progress.reverse();
+                    let mut byte = 0u8;
+                    for idx in 0..8 {
+
+                        byte <<= 1;
+
+                        if byte_in_progress[idx] {
+                            byte |= 1;
+                        }
+
+                    }
+
+                    result[0] = byte;
+                    callback(Some(&result));
+
+                    let c = char::from(byte);
+                    eprintln!("Byte: {} {}", byte, c);
+                    print!("{}", c);
+                    stdout().flush().unwrap();
+                    byte_in_progress.clear();
+                }
+            }
+        }
+
+        callback(None);
+        // let new_time = Instant::now();
+        // let avg_fps = frames as f64 / as_f64( &new_time.duration_since(start_time) );
+        // let elapsed_since_printing = as_f64(&new_time.duration_since(prev_print_time));
+        //
+        // // prev_time = new_time;
+        //
+        // if elapsed_since_printing > 1.0 {
+        //     // print!("\r{} fps", avg_fps);
+        //     // stdout().flush().unwrap();
+        //     prev_print_time = new_time;
+        // }
     }
 }
